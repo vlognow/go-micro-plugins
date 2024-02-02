@@ -2,7 +2,7 @@
 package memory
 
 import (
-	"path/filepath"
+	"path"
 	"sort"
 	"strings"
 	"time"
@@ -47,7 +47,7 @@ func init() {
 }
 
 func (m *memoryStore) key(prefix, key string) string {
-	return filepath.Join(prefix, key)
+	return path.Join(prefix, key)
 }
 
 func (m *memoryStore) prefix(database, table string) string {
@@ -57,7 +57,13 @@ func (m *memoryStore) prefix(database, table string) string {
 	if len(table) == 0 {
 		table = m.options.Table
 	}
-	return filepath.Join(database, table)
+
+	prefix := path.Join(database, table)
+	if len(prefix) > 0 {
+		prefix = prefix + "/"
+	}
+
+	return prefix
 }
 
 func (m *memoryStore) get(prefix, key string) (*store.Record, error) {
@@ -76,7 +82,7 @@ func (m *memoryStore) get(prefix, key string) (*store.Record, error) {
 
 	// Copy the record on the way out
 	newRecord := &store.Record{}
-	newRecord.Key = strings.TrimPrefix(storedRecord.key, prefix+"/")
+	newRecord.Key = strings.TrimPrefix(storedRecord.key, prefix)
 	newRecord.Value = make([]byte, len(storedRecord.value))
 	newRecord.Metadata = make(map[string]interface{})
 
@@ -132,10 +138,10 @@ func (m *memoryStore) list(prefix string, limit, offset uint) []string {
 	allKeys := make([]string, 0, len(allItems))
 
 	for k := range allItems {
-		if !strings.HasPrefix(k, prefix+"/") {
+		if !strings.HasPrefix(k, prefix) {
 			continue
 		}
-		allKeys = append(allKeys, strings.TrimPrefix(k, prefix+"/"))
+		allKeys = append(allKeys, strings.TrimPrefix(k, prefix))
 	}
 
 	if limit != 0 || offset != 0 {
